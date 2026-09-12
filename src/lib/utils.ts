@@ -30,11 +30,13 @@ export function nomeDoMes(dataISO: string): string {
   return nome.charAt(0).toUpperCase() + nome.slice(1);
 }
 
-export function ultimosNMeses(n: number): { chave: string; label: string }[] {
+export function ultimosNMeses(
+  n: number,
+  referencia: Date = new Date(),
+): { chave: string; label: string }[] {
   const resultado: { chave: string; label: string }[] = [];
-  const hoje = new Date();
   for (let i = n - 1; i >= 0; i--) {
-    const data = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+    const data = new Date(referencia.getFullYear(), referencia.getMonth() - i, 1);
     const chave = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}-01`;
     const label = new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(data);
     resultado.push({ chave, label: label.replace(".", "") });
@@ -48,9 +50,98 @@ export function mesVizinho(mesAAAAMM: string, delta: number): string {
   return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
 }
 
+export function somarMeses(dataISO: string, meses: number): string {
+  const [ano, mes, dia] = dataISO.split("-").map(Number);
+  const data = new Date(ano, mes - 1 + meses, dia);
+  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}-${String(
+    data.getDate(),
+  ).padStart(2, "0")}`;
+}
+
 export function hojeISO(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate(),
   ).padStart(2, "0")}`;
+}
+
+export function mesChaveDeData(dataISO: string): string {
+  return dataISO.slice(0, 7);
+}
+
+export function diasNoMes(ano: number, mes1a12: number): number {
+  return new Date(ano, mes1a12, 0).getDate();
+}
+
+/** Monta uma data ISO (AAAA-MM-DD) a partir de uma chave "AAAA-MM" e um dia,
+ * ajustando o dia para o último dia do mês se ele não existir (ex.: dia 31
+ * num mês de 30 dias, ou 29/30/31 de fevereiro). */
+export function dataComDia(mesChave: string, dia: number): string {
+  const [ano, mes] = mesChave.split("-").map(Number);
+  const diaAjustado = Math.min(dia, diasNoMes(ano, mes));
+  return `${mesChave}-${String(diaAjustado).padStart(2, "0")}`;
+}
+
+/** Gera todas as chaves "AAAA-MM" entre duas datas (inclusive), na ordem. */
+export function chavesDeMesesEntre(inicioISO: string, fimISO: string): string[] {
+  const [anoIni, mesIni] = inicioISO.split("-").map(Number);
+  const [anoFim, mesFim] = fimISO.split("-").map(Number);
+  const chaves: string[] = [];
+  let ano = anoIni;
+  let mes = mesIni;
+  let protecao = 0;
+  while ((ano < anoFim || (ano === anoFim && mes <= mesFim)) && protecao < 600) {
+    chaves.push(`${ano}-${String(mes).padStart(2, "0")}`);
+    mes += 1;
+    if (mes > 12) {
+      mes = 1;
+      ano += 1;
+    }
+    protecao += 1;
+  }
+  return chaves;
+}
+
+/** Em qual "fatura" (ciclo de fechamento, identificado pela chave "AAAA-MM"
+ * do mês em que ela fecha) uma compra feita em `dataCompraISO` cai, dado o
+ * dia de fechamento do cartão. Compras feitas depois do fechamento entram na
+ * fatura do mês seguinte. É só um agrupamento visual — não influencia o
+ * cálculo de saldo por mês nas outras telas do app. */
+export function faturaDoCartao(dataCompraISO: string, diaFechamento: number): string {
+  const [ano, mes, dia] = dataCompraISO.split("-").map(Number);
+  if (dia <= diaFechamento) {
+    return `${ano}-${String(mes).padStart(2, "0")}`;
+  }
+  return mesVizinho(`${ano}-${String(mes).padStart(2, "0")}`, 1);
+}
+
+function escaparCSV(valor: string | number): string {
+  const texto = String(valor);
+  if (/[",\n;]/.test(texto)) {
+    return `"${texto.replace(/"/g, '""')}"`;
+  }
+  return texto;
+}
+
+/** Gera e baixa um arquivo CSV (separado por ponto e vírgula, compatível com
+ * Excel em português) a partir de colunas e linhas já formatadas como texto. */
+export function exportarCSV(
+  nomeArquivo: string,
+  colunas: string[],
+  linhas: (string | number)[][],
+): void {
+  const separador = ";";
+  const cabecalho = colunas.map(escaparCSV).join(separador);
+  const corpo = linhas.map((linha) => linha.map(escaparCSV).join(separador)).join("\n");
+  // BOM no início para o Excel reconhecer acentuação UTF-8 corretamente.
+  const conteudo = "﻿" + cabecalho + "\n" + corpo;
+  const blob = new Blob([conteudo], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = nomeArquivo;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }

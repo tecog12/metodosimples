@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, Menu, shell } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,6 +12,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // "Método Simples" normalmente — isso só afeta esse detalhe técnico interno.
 app.setName("MetodoSimples");
 
+// Remove a barra de menu padrão do Electron (Arquivo/Editar/Ver/Janela/Ajuda).
+// O app não usa nenhum desses menus, então some tanto na tela de login
+// quanto no restante do programa.
+Menu.setApplicationMenu(null);
+
 const URL_DEV = process.env.ELECTRON_START_URL;
 
 function criarJanela() {
@@ -22,6 +27,7 @@ function criarJanela() {
     minHeight: 600,
     backgroundColor: "#faf8f4",
     title: "Método Simples",
+    autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

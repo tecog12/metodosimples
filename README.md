@@ -76,6 +76,19 @@ O app usa o mesmo backend Supabase do projeto original.
    key** (`sb_publishable_...`) — são os dois valores usados em
    `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 
+**Se seu projeto Supabase já existia antes** (rodou o `schema.sql` numa
+versão anterior do app): em vez do `schema.sql` inteiro, rode os arquivos de
+migração na ordem — [`supabase/migracao_v2.sql`](./supabase/migracao_v2.sql)
+(subcategorias, parcelamento), depois
+[`supabase/migracao_v3.sql`](./supabase/migracao_v3.sql) (contas) e depois
+[`supabase/migracao_v4.sql`](./supabase/migracao_v4.sql) (recorrências, metas
+de economia e os campos de fatura do cartão de crédito) — cada um só
+adiciona o que é novo, sem apagar nada do que já existe.
+
+> Nota sobre a notificação de vencimentos: na primeira vez que o app for
+> abrir um aviso de conta a vencer, o sistema operacional pode perguntar se
+> permite notificações do "MetodoSimples" — é só clicar em Permitir.
+
 ---
 
 ## 4. Como lançar uma nova versão (gerar os 3 instaladores automaticamente)

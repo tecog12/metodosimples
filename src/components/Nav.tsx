@@ -1,23 +1,30 @@
 import { NavLink } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { usePerfil } from "@/lib/usePerfil";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const ITENS = [
   { to: "/painel", label: "Painel" },
   { to: "/transacoes", label: "Transações" },
+  { to: "/recorrencias", label: "Recorrências" },
   { to: "/orcamentos", label: "Orçamentos" },
+  { to: "/metas", label: "Metas" },
+  { to: "/contas", label: "Contas" },
+  { to: "/categorias", label: "Categorias" },
+  { to: "/relatorios", label: "Relatórios" },
   { to: "/perfil", label: "Perfil" },
 ];
 
 export default function Nav() {
   const { perfil } = usePerfil();
+  const { tema, alternarTema } = useTheme();
 
   return (
-    <header className="border-b border-brand-100 bg-white">
+    <header className="border-b border-brand-100 bg-white print:hidden">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
         <span className="font-display text-lg text-brand-800">Método Simples</span>
 
-        <nav className="hidden gap-1 sm:flex">
+        <nav className="hidden flex-wrap gap-1 sm:flex">
           {ITENS.map((item) => (
             <NavLink
               key={item.to}
@@ -41,6 +48,14 @@ export default function Nav() {
               Olá, {perfil.nome.split(" ")[0]}
             </span>
           )}
+          <button
+            onClick={alternarTema}
+            className="btn-secondary !px-3 !py-2 text-sm"
+            title={tema === "claro" ? "Ativar modo escuro" : "Ativar modo claro"}
+            aria-label={tema === "claro" ? "Ativar modo escuro" : "Ativar modo claro"}
+          >
+            {tema === "claro" ? "🌙" : "☀️"}
+          </button>
           <button
             onClick={() => supabase.auth.signOut()}
             className="btn-secondary !px-4 !py-2 text-sm"

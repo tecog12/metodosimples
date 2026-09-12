@@ -1,25 +1,33 @@
 import { useMemo, useState } from "react";
-import type { Categoria, Transacao } from "@/lib/types";
+import type { Categoria, Conta, Subcategoria, Transacao } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 import { formatarData, formatarMoeda } from "@/lib/utils";
 
 type TransacaoComCategoria = Transacao & {
   categoria: { nome: string; cor: string } | { nome: string; cor: string }[] | null;
+  subcategoria: { nome: string } | { nome: string }[] | null;
+  conta: { nome: string } | { nome: string }[] | null;
 };
 
 export default function TransacaoItem({
   transacao,
   categorias,
+  subcategorias,
+  contas,
   aoMudar,
 }: {
   transacao: TransacaoComCategoria;
   categorias: Categoria[];
+  subcategorias: Subcategoria[];
+  contas: Conta[];
   aoMudar: () => void;
 }) {
   const [editando, setEditando] = useState(false);
   const [tipo, setTipo] = useState(transacao.tipo);
   const [valor, setValor] = useState(String(transacao.valor));
   const [categoriaId, setCategoriaId] = useState(transacao.categoria_id ?? "");
+  const [subcategoriaId, setSubcategoriaId] = useState(transacao.subcategoria_id ?? "");
+  const [contaId, setContaId] = useState(transacao.conta_id ?? "");
   const [descricao, setDescricao] = useState(transacao.descricao ?? "");
   const [data, setData] = useState(transacao.data);
   const [salvando, setSalvando] = useState(false);
@@ -28,14 +36,25 @@ export default function TransacaoItem({
     ? transacao.categoria[0]
     : transacao.categoria;
 
+  const subcategoria = Array.isArray(transacao.subcategoria)
+    ? transacao.subcategoria[0]
+    : transacao.subcategoria;
+
+  const conta = Array.isArray(transacao.conta) ? transacao.conta[0] : transacao.conta;
+
   const categoriasDoTipo = useMemo(
     () => categorias.filter((c) => c.tipo === tipo),
     [categorias, tipo],
   );
 
+  const subcategoriasDaCategoria = useMemo(
+    () => subcategorias.filter((s) => s.categoria_id === categoriaId),
+    [subcategorias, categoriaId],
+  );
+
   async function salvar() {
     const valorNumero = Number(valor.replace(",", "."));
-    if (!categoriaId || !valorNumero || valorNumero <= 0 || !data) return;
+    if (!categoriaId || !contaId || !valorNumero || valorNumero <= 0 || !data) return;
 
     setSalvando(true);
     await supabase
@@ -44,6 +63,8 @@ export default function TransacaoItem({
         tipo,
         valor: valorNumero,
         categoria_id: categoriaId,
+        subcategoria_id: subcategoriaId || null,
+        conta_id: contaId,
         descricao: descricao.trim() || null,
         data,
       })
@@ -55,6 +76,15 @@ export default function TransacaoItem({
 
   async function excluir() {
     await supabase.from("transacoes").delete().eq("id", transacao.id);
+    aoMudar();
+  }
+
+  async function excluirTodasAsParcelas() {
+    if (!transacao.grupo_parcelamento) return;
+    await supabase
+      .from("transacoes")
+      .delete()
+      .eq("grupo_parcelamento", transacao.grupo_parcelamento);
     aoMudar();
   }
 
@@ -92,9 +122,38 @@ export default function TransacaoItem({
         <select
           className="input-field"
           value={categoriaId}
-          onChange={(e) => setCategoriaId(e.target.value)}
+          onChange={(e) => {
+            setCategoriaId(e.target.value);
+            setSubcategoriaId("");
+          }}
         >
           {categoriasDoTipo.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.nome}
+            </option>
+          ))}
+        </select>
+        <select
+          className="input-field"
+          value={subcategoriaId}
+          onChange={(e) => setSubcategoriaId(e.target.value)}
+          disabled={subcategoriasDaCategoria.length === 0}
+        >
+          <option value="">
+            {subcategoriasDaCategoria.length === 0 ? "Sem subcategorias" : "Subcategoria (opcional)"}
+          </option>
+          {subcategoriasDaCategoria.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.nome}
+            </option>
+          ))}
+        </select>
+        <select
+          className="input-field"
+          value={contaId}
+          onChange={(e) => setContaId(e.target.value)}
+        >
+          {contas.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nome}
             </option>
@@ -134,9 +193,14 @@ export default function TransacaoItem({
         <div>
           <p className="text-sm font-medium text-brand-900">
             {categoria?.nome ?? "Sem categoria"}
+            {subcategoria?.nome ? ` › ${subcategoria.nome}` : ""}
             {transacao.descricao ? ` · ${transacao.descricao}` : ""}
+            {transacao.parcela_total ? ` (${transacao.parcela_numero}/${transacao.parcela_total})` : ""}
           </p>
-          <p className="text-xs text-brand-500">{formatarData(transacao.data)}</p>
+          <p className="text-xs text-brand-500">
+            {formatarData(transacao.data)}
+            {conta?.nome ? ` · ${conta.nome}` : ""}
+          </p>
         </div>
       </div>
       <div className="flex items-center gap-3">
@@ -156,6 +220,15 @@ export default function TransacaoItem({
         <button onClick={excluir} className="text-xs font-medium text-red-600 underline">
           Excluir
         </button>
+        {transacao.grupo_parcelamento && (
+          <button
+            onClick={excluirTodasAsParcelas}
+            className="text-xs font-medium text-red-600 underline"
+            title="Exclui essa e todas as outras parcelas dessa mesma compra"
+          >
+            Excluir todas
+          </button>
+        )}
       </div>
     </div>
   );

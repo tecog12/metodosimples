@@ -1,19 +1,26 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatarMoeda, nomeDoMes, primeiroDiaDoMes, primeiroDiaProximoMes } from "@/lib/utils";
+import { formatarMoeda, mesChaveDeData, mesVizinho, nomeDoMes } from "@/lib/utils";
 import type { Categoria } from "@/lib/types";
 
 export default function Orcamentos() {
   const { user } = useAuth();
-  const mesAtual = primeiroDiaDoMes();
-  const proximoMes = primeiroDiaProximoMes();
+  const hoje = new Date();
+  const mesAtualChave = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
+  const [mesSelecionado, setMesSelecionado] = useState(mesAtualChave);
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [gastoPorCategoria, setGastoPorCategoria] = useState<Map<string, number>>(new Map());
-  const [limitePorCategoria, setLimitePorCategoria] = useState<Map<string, number>>(new Map());
+  // Chave: "categoriaId|AAAA-MM"
+  const [gastoPorChave, setGastoPorChave] = useState<Map<string, number>>(new Map());
+  const [limitePorChave, setLimitePorChave] = useState<Map<string, number>>(new Map());
   const [carregando, setCarregando] = useState(true);
   const [rascunhos, setRascunhos] = useState<Record<string, string>>({});
+
+  const mesAtual = `${mesSelecionado}-01`;
+  const proximoMes = `${mesVizinho(mesSelecionado, 1)}-01`;
+  // Busca até 12 meses pra trás pra poder calcular o saldo acumulado (rollover).
+  const inicioJanela = `${mesVizinho(mesSelecionado, -12)}-01`;
 
   const carregar = useCallback(async () => {
     if (!user) return;
@@ -25,32 +32,35 @@ export default function Orcamentos() {
         .eq("user_id", user.id)
         .eq("tipo", "despesa")
         .order("nome"),
-      supabase.from("orcamentos").select("*").eq("user_id", user.id).eq("mes", mesAtual),
+      supabase.from("orcamentos").select("*").eq("user_id", user.id),
       supabase
         .from("transacoes")
-        .select("categoria_id, valor")
+        .select("categoria_id, valor, data")
         .eq("user_id", user.id)
         .eq("tipo", "despesa")
-        .gte("data", mesAtual)
+        .gte("data", inicioJanela)
         .lt("data", proximoMes),
     ]);
 
     const gastos = new Map<string, number>();
     for (const t of transacoes ?? []) {
       if (!t.categoria_id) continue;
-      gastos.set(t.categoria_id, (gastos.get(t.categoria_id) ?? 0) + Number(t.valor));
+      const chave = `${t.categoria_id}|${mesChaveDeData(t.data)}`;
+      gastos.set(chave, (gastos.get(chave) ?? 0) + Number(t.valor));
     }
 
-    const limites = new Map<string, number>(
-      (orcamentos ?? []).map((o) => [o.categoria_id as string, Number(o.limite)]),
-    );
+    const limites = new Map<string, number>();
+    for (const o of orcamentos ?? []) {
+      const chave = `${o.categoria_id}|${mesChaveDeData(o.mes as string)}`;
+      limites.set(chave, Number(o.limite));
+    }
 
     setCategorias((cats ?? []) as Categoria[]);
-    setGastoPorCategoria(gastos);
-    setLimitePorCategoria(limites);
+    setGastoPorChave(gastos);
+    setLimitePorChave(limites);
     setCarregando(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, mesAtual, proximoMes]);
+  }, [user, inicioJanela, proximoMes]);
 
   useEffect(() => {
     carregar();
@@ -71,26 +81,75 @@ export default function Orcamentos() {
     await carregar();
   }
 
+  /** Soma (limite - gasto) de cada mês anterior consecutivo em que a
+   * categoria já tinha um orçamento definido — isso é o "crédito" (ou
+   * "déficit", se negativo) que soma ao limite deste mês. Para no primeiro
+   * mês anterior sem orçamento definido para essa categoria. */
+  function saldoAcumulado(categoriaId: string): number {
+    let saldo = 0;
+    let mesChave = mesVizinho(mesSelecionado, -1);
+    for (let i = 0; i < 12; i++) {
+      const chave = `${categoriaId}|${mesChave}`;
+      const limiteDoMes = limitePorChave.get(chave);
+      if (limiteDoMes === undefined) break;
+      const gastoDoMes = gastoPorChave.get(chave) ?? 0;
+      saldo += limiteDoMes - gastoDoMes;
+      mesChave = mesVizinho(mesChave, -1);
+    }
+    return saldo;
+  }
+
   if (carregando) {
     return <p className="text-sm text-brand-500">Carregando…</p>;
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl text-brand-900">Orçamentos</h1>
-        <p className="text-sm text-brand-600">
-          Defina um limite mensal por categoria para {nomeDoMes(mesAtual).toLowerCase()}.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl text-brand-900">Orçamentos</h1>
+          <p className="text-sm text-brand-600">
+            Defina um limite mensal por categoria. O que sobrar (ou faltar) de um mês passa para o
+            próximo automaticamente.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <button
+            onClick={() => setMesSelecionado((m) => mesVizinho(m, -1))}
+            className="btn-secondary !px-3 !py-1.5"
+          >
+            ‹ Mês anterior
+          </button>
+          <span className="min-w-40 text-center font-medium text-brand-800">
+            {nomeDoMes(mesAtual)}
+          </span>
+          <button
+            onClick={() => setMesSelecionado((m) => mesVizinho(m, 1))}
+            className="btn-secondary !px-3 !py-1.5"
+          >
+            Próximo mês ›
+          </button>
+          {mesSelecionado !== mesAtualChave && (
+            <button
+              onClick={() => setMesSelecionado(mesAtualChave)}
+              className="text-xs font-medium text-brand-600 underline"
+            >
+              Hoje
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         {categorias.map((categoria) => {
-          const gasto = gastoPorCategoria.get(categoria.id) ?? 0;
-          const limite = limitePorCategoria.get(categoria.id) ?? 0;
-          const percentual = limite > 0 ? Math.min(100, (gasto / limite) * 100) : 0;
+          const chaveMes = `${categoria.id}|${mesSelecionado}`;
+          const gasto = gastoPorChave.get(chaveMes) ?? 0;
+          const limiteDoMes = limitePorChave.get(chaveMes) ?? 0;
+          const rollover = saldoAcumulado(categoria.id);
+          const limiteEfetivo = limiteDoMes + rollover;
+          const percentual = limiteEfetivo > 0 ? Math.min(100, (gasto / limiteEfetivo) * 100) : 0;
           const corBarra =
-            limite === 0
+            limiteEfetivo <= 0
               ? "#c1d9cd"
               : percentual >= 100
                 ? "#b8562f"
@@ -99,7 +158,7 @@ export default function Orcamentos() {
                   : "#47806a";
 
           return (
-            <div key={categoria.id} className="card">
+            <div key={`${categoria.id}-${mesSelecionado}`} className="card">
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span
@@ -110,7 +169,7 @@ export default function Orcamentos() {
                 </div>
                 <p className="text-sm text-brand-600">
                   {formatarMoeda(gasto)}
-                  {limite > 0 && ` / ${formatarMoeda(limite)}`}
+                  {limiteEfetivo > 0 && ` / ${formatarMoeda(limiteEfetivo)}`}
                 </p>
               </div>
 
@@ -121,7 +180,19 @@ export default function Orcamentos() {
                 />
               </div>
 
-              {limite > 0 && percentual >= 100 && (
+              {rollover !== 0 && (
+                <p
+                  className={`mt-1.5 text-xs font-medium ${
+                    rollover > 0 ? "text-brand-600" : "text-[#b8562f]"
+                  }`}
+                >
+                  {rollover > 0
+                    ? `+ ${formatarMoeda(rollover)} acumulado de meses anteriores`
+                    : `${formatarMoeda(rollover)} de saldo negativo de meses anteriores`}
+                </p>
+              )}
+
+              {limiteEfetivo > 0 && percentual >= 100 && (
                 <p className="mt-1.5 text-xs font-medium text-[#b8562f]">
                   Limite ultrapassado
                 </p>
@@ -132,8 +203,8 @@ export default function Orcamentos() {
                   type="number"
                   step="0.01"
                   min="0"
-                  defaultValue={limite || ""}
-                  placeholder="Definir limite (R$)"
+                  defaultValue={limiteDoMes || ""}
+                  placeholder="Definir limite deste mês (R$)"
                   className="input-field !py-1.5 text-sm"
                   onChange={(e) =>
                     setRascunhos((r) => ({ ...r, [categoria.id]: e.target.value }))

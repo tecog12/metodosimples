@@ -4,6 +4,14 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Nome interno sem acento: o Electron usa esse nome para montar o
+// cabeçalho "User-Agent" enviado em toda requisição de rede. Com acento
+// ("Método Simples"), esse cabeçalho chega corrompido no servidor e o
+// Supabase rejeita o login com um erro 500 ao tentar registrar o log da
+// requisição. O nome exibido nas janelas e no instalador continua
+// "Método Simples" normalmente — isso só afeta esse detalhe técnico interno.
+app.setName("MetodoSimples");
+
 const URL_DEV = process.env.ELECTRON_START_URL;
 
 function criarJanela() {

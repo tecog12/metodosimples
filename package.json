@@ -1,9 +1,9 @@
 {
   "name": "metodo-simples",
   "productName": "Método Simples",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Controle de gastos e orçamento para leitores do livro Método Simples",
-  "author": "Método Simples",
+  "author": "Método Simples <tecog12@gmail.com>",
   "private": true,
   "main": "electron/main.js",
   "type": "module",
@@ -66,9 +66,10 @@
       "allowToChangeInstallationDirectory": true
     },
     "publish": {
-      "provider": "github",
-      "owner": "tecog12",
-      "repo": "metodosimples"
+         "provider": "github",
+         "owner": "tecog12",
+         "repo": "metodosimples",
+         "releaseType": "release"
     }
   }
 }

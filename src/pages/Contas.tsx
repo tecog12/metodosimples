@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { faturaDoCartao, formatarData, formatarMoeda, nomeDoMes } from "@/lib/utils";
+import ContaCard from "@/components/ContaCard";
 import type { Conta, TipoConta } from "@/lib/types";
 
 const TIPOS: { valor: TipoConta; label: string }[] = [
@@ -35,9 +35,7 @@ export default function Contas() {
   const { user } = useAuth();
   const [contas, setContas] = useState<Conta[]>([]);
   const [saldos, setSaldos] = useState<SaldoPorConta>({});
-  const [transacoesPorConta, setTransacoesPorConta] = useState<
-    Record<string, TransacaoDaConta[]>
-  >({});
+  const [despesasPorConta, setDespesasPorConta] = useState<Record<string, TransacaoDaConta[]>>({});
   const [carregando, setCarregando] = useState(true);
 
   const [nome, setNome] = useState("");
@@ -47,8 +45,6 @@ export default function Contas() {
   const [diaVencimento, setDiaVencimento] = useState("10");
   const [cor, setCor] = useState(CORES_SUGERIDAS[0]);
   const [salvando, setSalvando] = useState(false);
-
-  const [faturaAbertaDe, setFaturaAbertaDe] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     if (!user) return;
@@ -64,28 +60,30 @@ export default function Contas() {
 
     const listaContas = (contasData ?? []) as Conta[];
     const novoSaldo: SaldoPorConta = {};
-    const novasTransacoesPorConta: Record<string, TransacaoDaConta[]> = {};
+    const novasDespesasPorConta: Record<string, TransacaoDaConta[]> = {};
     for (const c of listaContas) {
       novoSaldo[c.id] = Number(c.saldo_inicial);
-      novasTransacoesPorConta[c.id] = [];
+      novasDespesasPorConta[c.id] = [];
     }
     for (const t of transData ?? []) {
       if (!t.conta_id) continue;
       const delta = t.tipo === "receita" ? Number(t.valor) : -Number(t.valor);
       novoSaldo[t.conta_id] = (novoSaldo[t.conta_id] ?? 0) + delta;
-      if (!novasTransacoesPorConta[t.conta_id]) novasTransacoesPorConta[t.conta_id] = [];
-      novasTransacoesPorConta[t.conta_id].push({
-        id: t.id,
-        valor: Number(t.valor),
-        descricao: t.descricao,
-        data: t.data,
-        tipo: t.tipo,
-      });
+      if (t.tipo === "despesa") {
+        if (!novasDespesasPorConta[t.conta_id]) novasDespesasPorConta[t.conta_id] = [];
+        novasDespesasPorConta[t.conta_id].push({
+          id: t.id,
+          valor: Number(t.valor),
+          descricao: t.descricao,
+          data: t.data,
+          tipo: t.tipo,
+        });
+      }
     }
 
     setContas(listaContas);
     setSaldos(novoSaldo);
-    setTransacoesPorConta(novasTransacoesPorConta);
+    setDespesasPorConta(novasDespesasPorConta);
     setCarregando(false);
   }, [user]);
 
@@ -111,37 +109,6 @@ export default function Contas() {
     setNome("");
     setSaldoInicial("0");
     await carregar();
-  }
-
-  async function excluirConta(contaId: string) {
-    await supabase.from("contas").delete().eq("id", contaId);
-    await carregar();
-  }
-
-  function faturasDaConta(conta: Conta) {
-    if (!conta.dia_fechamento) return [];
-    const transacoesDespesa = (transacoesPorConta[conta.id] ?? []).filter(
-      (t) => t.tipo === "despesa",
-    );
-    const grupos = new Map<string, { total: number; itens: TransacaoDaConta[] }>();
-    for (const t of transacoesDespesa) {
-      const chave = faturaDoCartao(t.data, conta.dia_fechamento);
-      const grupo = grupos.get(chave);
-      if (grupo) {
-        grupo.total += t.valor;
-        grupo.itens.push(t);
-      } else {
-        grupos.set(chave, { total: t.valor, itens: [t] });
-      }
-    }
-    return Array.from(grupos.entries())
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .slice(0, 6)
-      .map(([chave, { total, itens }]) => ({
-        chave,
-        total,
-        itens: itens.sort((a, b) => b.data.localeCompare(a.data)),
-      }));
   }
 
   if (carregando) {
@@ -239,87 +206,15 @@ export default function Contas() {
       </form>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {contas.map((c) => {
-          const saldo = saldos[c.id] ?? Number(c.saldo_inicial);
-          const ehCartao = c.tipo === "cartao_credito";
-          const faturas = ehCartao ? faturasDaConta(c) : [];
-          const faturaAberta = faturaAbertaDe === c.id;
-
-          return (
-            <div key={c.id} className={`card ${ehCartao ? "sm:col-span-2 lg:col-span-1" : ""}`}>
-              <div className="mb-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: c.cor }} />
-                  <p className="font-medium text-brand-900">{c.nome}</p>
-                </div>
-                <button
-                  onClick={() => excluirConta(c.id)}
-                  className="text-xs font-medium text-red-600 underline"
-                >
-                  Excluir
-                </button>
-              </div>
-              <p className="text-xs text-brand-500">
-                {TIPOS.find((t) => t.valor === c.tipo)?.label ?? c.tipo}
-                {ehCartao && c.dia_fechamento && c.dia_vencimento
-                  ? ` · fecha dia ${c.dia_fechamento}, vence dia ${c.dia_vencimento}`
-                  : ""}
-              </p>
-              <p
-                className={`mt-2 font-display text-xl ${
-                  saldo >= 0 ? "text-brand-700" : "text-[#b8562f]"
-                }`}
-              >
-                {formatarMoeda(saldo)}
-              </p>
-
-              {ehCartao && c.dia_fechamento && (
-                <div className="mt-3 border-t border-brand-100 pt-3">
-                  <button
-                    onClick={() => setFaturaAbertaDe(faturaAberta ? null : c.id)}
-                    className="text-xs font-medium text-brand-600 underline"
-                  >
-                    {faturaAberta ? "Esconder faturas" : "Ver faturas"}
-                  </button>
-
-                  {faturaAberta && (
-                    <div className="mt-3 space-y-3">
-                      {faturas.length === 0 && (
-                        <p className="text-xs text-brand-500">Nenhuma compra registrada ainda.</p>
-                      )}
-                      {faturas.map((f) => (
-                        <div key={f.chave}>
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-brand-800">
-                              Fatura de {nomeDoMes(`${f.chave}-01`)}
-                            </p>
-                            <p className="text-sm font-medium text-[#b8562f]">
-                              {formatarMoeda(f.total)}
-                            </p>
-                          </div>
-                          <div className="mt-1 space-y-0.5 pl-2">
-                            {f.itens.map((item) => (
-                              <div
-                                key={item.id}
-                                className="flex items-center justify-between text-xs text-brand-600"
-                              >
-                                <span>
-                                  {formatarData(item.data)}
-                                  {item.descricao ? ` · ${item.descricao}` : ""}
-                                </span>
-                                <span>{formatarMoeda(item.valor)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {contas.map((c) => (
+          <ContaCard
+            key={c.id}
+            conta={c}
+            saldo={saldos[c.id] ?? Number(c.saldo_inicial)}
+            transacoesDespesa={despesasPorConta[c.id] ?? []}
+            aoMudar={carregar}
+          />
+        ))}
         {contas.length === 0 && (
           <p className="text-sm text-brand-500">Nenhuma conta ainda.</p>
         )}

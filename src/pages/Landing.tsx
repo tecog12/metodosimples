@@ -1,5 +1,6 @@
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import Logo from "@/components/Logo";
 
 export default function Landing() {
   const { user, carregando } = useAuth();
@@ -11,6 +12,7 @@ export default function Landing() {
   return (
     <main className="min-h-screen bg-sand-50">
       <div className="mx-auto flex max-w-4xl flex-col items-center px-4 py-24 text-center">
+        <Logo className="mb-6 h-16 w-auto" />
         <span className="mb-4 rounded-full bg-brand-100 px-4 py-1 text-xs font-medium uppercase tracking-wide text-brand-700">
           Companheiro do livro
         </span>

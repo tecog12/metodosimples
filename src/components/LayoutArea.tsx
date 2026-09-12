@@ -17,10 +17,12 @@ export default function LayoutArea() {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-sand-50">
+    <div className="flex min-h-screen flex-col bg-sand-50 sm:flex-row">
       <Nav />
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <Outlet />
+      <main className="flex-1 sm:overflow-y-auto">
+        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

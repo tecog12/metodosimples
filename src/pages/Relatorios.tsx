@@ -221,7 +221,7 @@ export default function Relatorios() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="card">
               <p className="text-sm text-brand-600">Total de receitas</p>
-              <p className="mt-1 font-display text-xl text-brand-700">
+              <p className="mt-1 font-display text-xl text-positivo-700">
                 {formatarMoeda(totalReceitas)}
               </p>
             </div>
@@ -235,7 +235,7 @@ export default function Relatorios() {
               <p className="text-sm text-brand-600">Saldo do período</p>
               <p
                 className={`mt-1 font-display text-xl ${
-                  totalReceitas - totalDespesas >= 0 ? "text-brand-700" : "text-[#b8562f]"
+                  totalReceitas - totalDespesas >= 0 ? "text-positivo-700" : "text-[#b8562f]"
                 }`}
               >
                 {formatarMoeda(totalReceitas - totalDespesas)}

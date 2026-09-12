@@ -105,7 +105,7 @@ export default function TransacaoItem({
             type="button"
             onClick={() => setTipo("receita")}
             className={`flex-1 rounded-full px-3 py-1 text-xs font-medium transition ${
-              tipo === "receita" ? "bg-brand-600 text-white" : "text-brand-700"
+              tipo === "receita" ? "bg-positivo-600 text-white" : "text-brand-700"
             }`}
           >
             Receita
@@ -206,7 +206,7 @@ export default function TransacaoItem({
       <div className="flex items-center gap-3">
         <span
           className={`text-sm font-medium ${
-            transacao.tipo === "receita" ? "text-brand-700" : "text-[#b8562f]"
+            transacao.tipo === "receita" ? "text-positivo-700" : "text-[#b8562f]"
           }`}
         >
           {transacao.tipo === "receita" ? "+" : "−"} {formatarMoeda(Number(transacao.valor))}

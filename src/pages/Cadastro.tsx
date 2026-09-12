@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import Logo from "@/components/Logo";
 
 export default function Cadastro() {
   const navegar = useNavigate();
@@ -52,8 +53,8 @@ export default function Cadastro() {
     <main className="flex min-h-screen items-center justify-center bg-sand-50 px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <Link to="/" className="font-display text-2xl text-brand-800">
-            Método Simples
+          <Link to="/" className="inline-block">
+            <Logo className="mx-auto h-10 w-auto" />
           </Link>
           <p className="mt-2 text-sm text-brand-600">
             Crie sua conta gratuita para acompanhar suas finanças.

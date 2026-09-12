@@ -189,7 +189,7 @@ export default function Categorias() {
             type="button"
             onClick={() => setTipoCategoria("receita")}
             className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              tipoCategoria === "receita" ? "bg-brand-600 text-white" : "text-brand-700"
+              tipoCategoria === "receita" ? "bg-positivo-600 text-white" : "text-brand-700"
             }`}
           >
             Receita

@@ -128,7 +128,7 @@ export default function NovaTransacaoForm({
           type="button"
           onClick={() => setTipo("receita")}
           className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium transition ${
-            tipo === "receita" ? "bg-brand-600 text-white" : "text-brand-700"
+            tipo === "receita" ? "bg-positivo-600 text-white" : "text-brand-700"
           }`}
         >
           Receita

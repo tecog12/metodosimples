@@ -27,6 +27,12 @@ function criarJanela() {
     minHeight: 600,
     backgroundColor: "#faf8f4",
     title: "Método Simples",
+    // No Windows/macOS o ícone do instalador (build/icon.ico e .icns) já
+    // cuida do ícone do app. No Linux, a janela também usa esse ícone para
+    // aparecer certo na barra de tarefas. Fica copiado aqui dentro de
+    // electron/ (em vez de referenciar build/) porque essa pasta é a que
+    // realmente vai dentro do programa empacotado.
+    icon: path.join(__dirname, "icon.png"),
     autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,

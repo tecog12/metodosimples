@@ -67,20 +67,20 @@ body {
 }
 
 .dark body {
-  background-color: #14201b;
+  background-color: #0a121d;
 }
 
 .dark .bg-sand-50 {
-  background-color: #101915;
+  background-color: #070d15;
 }
 
 .dark .bg-white {
-  background-color: #1b2822;
+  background-color: #111f30;
 }
 
 .dark .card {
   @apply border-brand-800;
-  background-color: #1b2822;
+  background-color: #111f30;
 }
 
 .dark .border-brand-100,
@@ -89,58 +89,65 @@ body {
 }
 
 .dark .bg-brand-50 {
-  background-color: rgba(105, 158, 134, 0.12);
+  background-color: rgba(97, 143, 199, 0.14);
 }
 
 .dark .bg-brand-100 {
-  background-color: rgba(105, 158, 134, 0.18);
+  background-color: rgba(97, 143, 199, 0.2);
 }
 
 .dark .text-brand-900 {
-  color: #f2f7f5;
+  color: #f3f7fc;
 }
 
 .dark .text-brand-800 {
-  color: #dfeae4;
+  color: #dee7f2;
 }
 
 .dark .text-brand-700 {
-  color: #9cc4b0;
+  color: #a9c2e0;
 }
 
 .dark .text-brand-600 {
-  color: #8ab89f;
+  color: #93b3da;
 }
 
 .dark .text-brand-500 {
-  color: #7fa793;
+  color: #85a0bf;
+}
+
+/* Verde de "valor positivo" — clareado no escuro pra manter contraste
+   contra o fundo azul-marinho, sem perder a associação com "positivo". */
+.dark .text-positivo-700,
+.dark .text-positivo-600 {
+  color: #8fc0a5;
 }
 
 .dark .input-field {
-  border-color: #2b4238;
-  background-color: #16221d;
-  color: #f2f7f5;
+  border-color: #1c2f47;
+  background-color: #0d1826;
+  color: #f3f7fc;
 }
 
 .dark .input-field::placeholder {
-  color: #6b8a7a;
+  color: #5b7699;
 }
 
 .dark .btn-secondary {
   @apply border-brand-800;
-  background-color: #1b2822;
-  color: #dfeae4;
+  background-color: #111f30;
+  color: #dee7f2;
 }
 
 .dark .btn-secondary:hover {
-  background-color: #223229;
+  background-color: #182a41;
 }
 
 .dark .progress-track {
-  background-color: #26362d;
+  background-color: #1a2c42;
 }
 
 .dark ::selection {
-  background-color: #356654;
-  color: #f2f7f5;
+  background-color: #163862;
+  color: #f3f7fc;
 }

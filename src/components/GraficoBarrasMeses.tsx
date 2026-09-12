@@ -16,8 +16,8 @@ type PontoMes = { label: string; receita: number; despesa: number };
 export default function GraficoBarrasMeses({ dados }: { dados: PontoMes[] }) {
   const { tema } = useTheme();
   const escuro = tema === "escuro";
-  const corGrade = escuro ? "#2b4238" : "#e0ece6";
-  const corTexto = escuro ? "#9cc4b0" : "#356654";
+  const corGrade = escuro ? "#1c2f47" : "#e9edf2";
+  const corTexto = escuro ? "#a9c2e0" : "#163862";
 
   return (
     <ResponsiveContainer width="100%" height={260}>
@@ -41,8 +41,8 @@ export default function GraficoBarrasMeses({ dados }: { dados: PontoMes[] }) {
           contentStyle={{
             borderRadius: 12,
             border: `1px solid ${corGrade}`,
-            backgroundColor: escuro ? "#1b2822" : "#ffffff",
-            color: escuro ? "#f2f7f5" : "#20372f",
+            backgroundColor: escuro ? "#111f30" : "#ffffff",
+            color: escuro ? "#f3f7fc" : "#091829",
             fontSize: 13,
           }}
         />
@@ -50,7 +50,7 @@ export default function GraficoBarrasMeses({ dados }: { dados: PontoMes[] }) {
         <Bar
           dataKey="receita"
           name="Receitas"
-          fill="#356654"
+          fill={escuro ? "#4f9678" : "#356654"}
           radius={[4, 4, 0, 0]}
           maxBarSize={28}
         />

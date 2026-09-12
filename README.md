@@ -15,13 +15,49 @@ mesmo login funciona em qualquer computador.
    - **Windows:** arquivo `.exe` (instalador)
    - **macOS:** arquivo `.dmg`
    - **Linux:** arquivo `.AppImage` (não precisa instalar, é só executar) ou `.deb`
-3. Instale/abra normalmente. Na primeira execução:
-   - **Windows:** o Windows SmartScreen pode avisar "Windows protegeu seu PC" por não reconhecer o autor (o instalador não é assinado digitalmente). Clique em **Mais informações → Executar assim mesmo**.
-   - **macOS:** por não haver um certificado de desenvolvedor Apple, o Gatekeeper pode bloquear a abertura. Clique com o botão direito no app → **Abrir** → **Abrir** (só precisa fazer isso uma vez).
-4. Crie uma conta (e-mail e senha) direto no app. Os dados ficam salvos automaticamente e sincronizados na nuvem.
+3. Instale/abra normalmente. É esperado que apareça um aviso de segurança na
+   primeira vez — veja abaixo exatamente o que fazer em cada sistema.
+4. Crie uma conta (e-mail e senha) direto no app. Os dados ficam salvos
+   automaticamente e sincronizados na nuvem.
 
-> Assinar digitalmente os instaladores (Windows/macOS) exige certificados
-> pagos e não é obrigatório para o app funcionar — só evita esses avisos.
+### Por que aparece um aviso de segurança (e por que é seguro seguir em frente)
+
+O Método Simples não tem uma "assinatura digital" — um selo pago que
+comprova pro Windows e pro Mac quem é o autor do programa. Sem esse selo,
+os dois sistemas mostram um aviso por padrão para *qualquer* programa
+baixado da internet, mesmo sendo seguro. Isso não significa que o app tem
+vírus — é só o computador avisando "eu não conheço quem fez isso".
+
+**No Windows:**
+
+1. Depois de baixar o arquivo `.exe`, clique nele duas vezes para abrir o
+   instalador.
+2. Vai aparecer uma tela azul escrita **"O Windows protegeu o computador"**,
+   com um botão **Não executar**.
+3. Clique no link pequeno escrito **"Mais informações"** (fica logo abaixo
+   do título da tela).
+4. Agora vai aparecer um botão novo, **"Executar assim mesmo"** — clique
+   nele.
+5. O instalador do Método Simples abre normalmente. Isso só acontece uma
+   vez, na primeira instalação de cada versão nova.
+
+**No macOS:**
+
+1. Depois de baixar o arquivo `.dmg`, abra-o e arraste o ícone do Método
+   Simples para a pasta **Aplicativos**, como de costume.
+2. Vá até a pasta **Aplicativos** (pelo Finder) e, em vez de dar duplo
+   clique, clique **com o botão direito do mouse** (ou dois dedos no
+   trackpad) em cima do ícone do Método Simples.
+3. No menu que aparece, clique em **Abrir**.
+4. Vai aparecer um aviso perguntando se você tem certeza que quer abrir —
+   clique em **Abrir** de novo.
+5. Pronto — a partir daí, o app abre normalmente com um duplo clique, como
+   qualquer outro programa.
+
+> Se quiser, dá pra pagar por certificados oficiais (Apple e Microsoft)
+> para esses avisos pararem de aparecer — mas isso tem um custo anual e não
+> é obrigatório para o app funcionar direitinho. Por enquanto, seguimos sem
+> esse custo.
 
 ---
 
@@ -66,7 +102,9 @@ O app usa o mesmo backend Supabase do projeto original.
 
 1. Crie um projeto em [supabase.com](https://supabase.com) (ou reaproveite o
    que já existe).
-2. No painel do projeto, abra **SQL Editor → New query**, cole todo o
+2. No painel do projeto, abra **SQL Editor → New snippet** (não é "New
+   folder", que só organiza pastas, nem "New logs query", que é outra
+   ferramenta para consultar logs do projeto), cole todo o
    conteúdo do arquivo [`supabase/schema.sql`](./supabase/schema.sql) deste
    repositório e clique em **Run**. Isso cria as tabelas `profiles`,
    `categorias`, `transacoes`, `orcamentos`, as políticas de segurança (RLS —

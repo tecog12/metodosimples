@@ -150,7 +150,7 @@ export default function Orcamentos() {
           const percentual = limiteEfetivo > 0 ? Math.min(100, (gasto / limiteEfetivo) * 100) : 0;
           const corBarra =
             limiteEfetivo <= 0
-              ? "#c1d9cd"
+              ? "#cdd7e5"
               : percentual >= 100
                 ? "#b8562f"
                 : percentual >= 80
@@ -183,7 +183,7 @@ export default function Orcamentos() {
               {rollover !== 0 && (
                 <p
                   className={`mt-1.5 text-xs font-medium ${
-                    rollover > 0 ? "text-brand-600" : "text-[#b8562f]"
+                    rollover > 0 ? "text-positivo-600" : "text-[#b8562f]"
                   }`}
                 >
                   {rollover > 0

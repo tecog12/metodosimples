@@ -144,7 +144,7 @@ export default function Recorrencias() {
             type="button"
             onClick={() => setTipo("receita")}
             className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              tipo === "receita" ? "bg-brand-600 text-white" : "text-brand-700"
+              tipo === "receita" ? "bg-positivo-600 text-white" : "text-brand-700"
             }`}
           >
             Receita
@@ -283,7 +283,7 @@ export default function Recorrencias() {
             <div className="flex items-center gap-3">
               <span
                 className={`text-sm font-medium ${
-                  r.tipo === "receita" ? "text-brand-700" : "text-[#b8562f]"
+                  r.tipo === "receita" ? "text-positivo-700" : "text-[#b8562f]"
                 }`}
               >
                 {r.tipo === "receita" ? "+" : "−"} {formatarMoeda(Number(r.valor))}

@@ -134,7 +134,7 @@ export default function Painel() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="card">
               <p className="text-sm text-brand-600">Receitas do mês</p>
-              <p className="mt-1 font-display text-2xl text-brand-700">
+              <p className="mt-1 font-display text-2xl text-positivo-700">
                 {formatarMoeda(totalReceitas)}
               </p>
             </div>
@@ -148,7 +148,7 @@ export default function Painel() {
               <p className="text-sm text-brand-600">Saldo do mês</p>
               <p
                 className={`mt-1 font-display text-2xl ${
-                  saldo >= 0 ? "text-brand-700" : "text-[#b8562f]"
+                  saldo >= 0 ? "text-positivo-700" : "text-[#b8562f]"
                 }`}
               >
                 {formatarMoeda(saldo)}

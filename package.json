@@ -1,7 +1,7 @@
 {
   "name": "metodo-simples",
   "productName": "Método Simples",
-  "version": "1.0.11",
+  "version": "1.0.13",
   "description": "Controle de gastos e orçamento para leitores do livro Método Simples",
   "author": "Método Simples <tecog12@gmail.com>",
   "private": true,
@@ -32,8 +32,8 @@
     "autoprefixer": "^10.4.19",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
-    "electron": "^32.1.2",
-    "electron-builder": "^25.0.5",
+    "electron": "^43.0.0",
+    "electron-builder": "^26.0.12",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.5.3",
@@ -49,6 +49,12 @@
     "files": [
       "dist/**/*",
       "electron/**/*"
+    ],
+    "protocols": [
+      {
+        "name": "Método Simples",
+        "schemes": ["metodosimples"]
+      }
     ],
     "win": {
       "target": ["nsis"]

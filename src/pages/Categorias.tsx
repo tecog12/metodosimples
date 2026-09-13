@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import CategoriaCard from "@/components/CategoriaCard";
 import type { Categoria, Subcategoria, TipoLancamento } from "@/lib/types";
 
 const CORES_SUGERIDAS = [
@@ -26,11 +27,6 @@ export default function Categorias() {
   const [tipoCategoria, setTipoCategoria] = useState<TipoLancamento>("despesa");
   const [corCategoria, setCorCategoria] = useState(CORES_SUGERIDAS[0]);
   const [salvandoCategoria, setSalvandoCategoria] = useState(false);
-
-  const [novaSubcategoriaPorCategoria, setNovaSubcategoriaPorCategoria] = useState<
-    Record<string, string>
-  >({});
-  const [salvandoSubcategoriaDe, setSalvandoSubcategoriaDe] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     if (!user) return;
@@ -64,32 +60,6 @@ export default function Categorias() {
     await carregar();
   }
 
-  async function excluirCategoria(categoriaId: string) {
-    await supabase.from("categorias").delete().eq("id", categoriaId);
-    await carregar();
-  }
-
-  async function criarSubcategoria(categoriaId: string) {
-    if (!user) return;
-    const nome = (novaSubcategoriaPorCategoria[categoriaId] ?? "").trim();
-    if (!nome) return;
-
-    setSalvandoSubcategoriaDe(categoriaId);
-    await supabase.from("subcategorias").insert({
-      user_id: user.id,
-      categoria_id: categoriaId,
-      nome,
-    });
-    setSalvandoSubcategoriaDe(null);
-    setNovaSubcategoriaPorCategoria((s) => ({ ...s, [categoriaId]: "" }));
-    await carregar();
-  }
-
-  async function excluirSubcategoria(subcategoriaId: string) {
-    await supabase.from("subcategorias").delete().eq("id", subcategoriaId);
-    await carregar();
-  }
-
   if (carregando) {
     return <p className="text-sm text-brand-500">Carregando…</p>;
   }
@@ -100,64 +70,15 @@ export default function Categorias() {
   function listaDeCategorias(lista: Categoria[]) {
     return (
       <div className="space-y-4">
-        {lista.map((categoria) => {
-          const subs = subcategorias.filter((s) => s.categoria_id === categoria.id);
-          return (
-            <div key={categoria.id} className="card">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: categoria.cor }}
-                  />
-                  <p className="font-medium text-brand-900">{categoria.nome}</p>
-                </div>
-                <button
-                  onClick={() => excluirCategoria(categoria.id)}
-                  className="text-xs font-medium text-red-600 underline"
-                >
-                  Excluir categoria
-                </button>
-              </div>
-
-              <div className="space-y-2 pl-5">
-                {subs.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between">
-                    <p className="text-sm text-brand-700">› {s.nome}</p>
-                    <button
-                      onClick={() => excluirSubcategoria(s.id)}
-                      className="text-xs font-medium text-red-600 underline"
-                    >
-                      Excluir
-                    </button>
-                  </div>
-                ))}
-
-                <div className="flex gap-2 pt-1">
-                  <input
-                    type="text"
-                    placeholder="Nova subcategoria"
-                    className="input-field !py-1.5 text-sm"
-                    value={novaSubcategoriaPorCategoria[categoria.id] ?? ""}
-                    onChange={(e) =>
-                      setNovaSubcategoriaPorCategoria((s) => ({
-                        ...s,
-                        [categoria.id]: e.target.value,
-                      }))
-                    }
-                  />
-                  <button
-                    onClick={() => criarSubcategoria(categoria.id)}
-                    disabled={salvandoSubcategoriaDe === categoria.id}
-                    className="btn-secondary !px-4 !py-1.5 text-sm"
-                  >
-                    Adicionar
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {lista.map((categoria) => (
+          <CategoriaCard
+            key={categoria.id}
+            categoria={categoria}
+            subcategorias={subcategorias.filter((s) => s.categoria_id === categoria.id)}
+            coresSugeridas={CORES_SUGERIDAS}
+            aoMudar={carregar}
+          />
+        ))}
         {lista.length === 0 && (
           <p className="text-sm text-brand-500">Nenhuma categoria ainda.</p>
         )}
@@ -170,7 +91,9 @@ export default function Categorias() {
       <div>
         <h1 className="font-display text-2xl text-brand-900">Categorias</h1>
         <p className="text-sm text-brand-600">
-          Organize suas categorias e subcategorias de receitas e despesas.
+          Organize suas categorias e subcategorias de receitas e despesas. Você
+          pode editar tanto as categorias quanto as subcategorias, e adicionar
+          quantas subcategorias quiser em cada uma.
         </p>
       </div>
 

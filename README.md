@@ -113,6 +113,11 @@ O app usa o mesmo backend Supabase do projeto original.
 3. Em **Settings → API Keys**, copie a **Project URL** e a **Publishable
    key** (`sb_publishable_...`) — são os dois valores usados em
    `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
+4. Em **Authentication → URL Configuration → Redirect URLs**, adicione
+   `metodosimples://redefinir-senha` à lista. **Esse passo é obrigatório** —
+   sem ele, o Supabase recusa o link de "esqueci minha senha" e o e-mail de
+   redefinição não funciona (o resto do app funciona normalmente sem isso,
+   só esse recurso específico depende dele).
 
 **Se seu projeto Supabase já existia antes** (rodou o `schema.sql` numa
 versão anterior do app): em vez do `schema.sql` inteiro, rode os arquivos de
@@ -126,6 +131,15 @@ adiciona o que é novo, sem apagar nada do que já existe.
 > Nota sobre a notificação de vencimentos: na primeira vez que o app for
 > abrir um aviso de conta a vencer, o sistema operacional pode perguntar se
 > permite notificações do "MetodoSimples" — é só clicar em Permitir.
+
+> Nota de segurança (a partir da versão 1.0.12): a sessão de login passou a
+> ser guardada criptografada (usando o cofre de senhas do próprio sistema
+> operacional) em vez de texto puro. Quem já estava logado numa versão
+> anterior vai precisar entrar de novo uma única vez depois de atualizar —
+> depois disso, o app volta a manter a pessoa logada normalmente. O link de
+> "esqueci minha senha" só funciona no programa instalado (não em
+> `npm run electron:dev`), porque depende de um protocolo (`metodosimples://`)
+> que só fica registrado no sistema operacional depois da instalação.
 
 ---
 

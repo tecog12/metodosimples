@@ -35,7 +35,16 @@ export default function Cadastro() {
     setEnviando(false);
 
     if (error) {
-      setErro(error.message);
+      const mensagem = error.message.toLowerCase();
+      if (mensagem.includes("already registered") || mensagem.includes("already exists")) {
+        setErro("Esse e-mail já está cadastrado. Tente entrar ou recuperar sua senha.");
+      } else if (mensagem.includes("rate limit")) {
+        setErro("Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente de novo.");
+      } else {
+        // Mensagem genérica de propósito: evita expor detalhes técnicos do
+        // servidor sem necessidade.
+        setErro("Não foi possível criar a conta agora. Tente novamente em instantes.");
+      }
       return;
     }
 

@@ -41,7 +41,10 @@ export default function Login() {
       } else if (mensagem.includes("invalid login credentials")) {
         setErro("E-mail ou senha incorretos. Tente novamente.");
       } else {
-        setErro(error.message);
+        // Mensagem genérica de propósito: evita expor detalhes técnicos do
+        // servidor que não ajudam o usuário e podem ser úteis pra alguém
+        // tentando descobrir informações sobre a conta.
+        setErro("Não foi possível entrar agora. Tente novamente em instantes.");
       }
       return;
     }
@@ -132,6 +135,12 @@ export default function Login() {
               {enviando ? "Entrando…" : "Entrar"}
             </button>
           </form>
+
+          <p className="mt-4 text-center text-sm">
+            <Link to="/esqueci-senha" className="font-medium text-brand-700 underline">
+              Esqueci minha senha
+            </Link>
+          </p>
         </div>
 
         <p className="mt-6 text-center text-sm text-brand-600">

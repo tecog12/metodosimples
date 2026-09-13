@@ -4,6 +4,8 @@ import LayoutArea from "@/components/LayoutArea";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Cadastro from "@/pages/Cadastro";
+import EsqueciSenha from "@/pages/EsqueciSenha";
+import RedefinirSenha from "@/pages/RedefinirSenha";
 import Painel from "@/pages/Painel";
 import Transacoes from "@/pages/Transacoes";
 import Recorrencias from "@/pages/Recorrencias";
@@ -34,6 +36,18 @@ export default function App() {
           </RotaSomenteVisitante>
         }
       />
+      <Route
+        path="/esqueci-senha"
+        element={
+          <RotaSomenteVisitante>
+            <EsqueciSenha />
+          </RotaSomenteVisitante>
+        }
+      />
+      {/* Sem RotaSomenteVisitante: essa tela chega pelo link do e-mail e
+          precisa poder abrir uma sessão de recuperação própria, mesmo que
+          o app ache que ninguém está logado ainda. */}
+      <Route path="/redefinir-senha" element={<RedefinirSenha />} />
 
       <Route element={<RotaProtegida />}>
         <Route element={<LayoutArea />}>

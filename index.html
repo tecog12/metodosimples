@@ -3,6 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Content Security Policy: trava de onde o app pode carregar/enviar
+      coisas — mesmo com o sandbox do Electron já ativado, isso é uma
+      camada extra contra scripts maliciosos injetados por algum bug.
+      %VITE_SUPABASE_URL% é substituído pelo endereço real do projeto
+      Supabase no momento do build (recurso do próprio Vite).
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' %VITE_SUPABASE_URL%; object-src 'none'; base-uri 'self'; form-action 'self';"
+    />
     <title>Método Simples</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

@@ -85,12 +85,21 @@ create table if not exists public.subcategorias (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   categoria_id uuid not null references public.categorias (id) on delete cascade,
+  -- Quando preenchido, essa subcategoria fica "dentro" de outra
+  -- subcategoria (em vez de direto na categoria) — permite quantos níveis
+  -- o usuário quiser. Apagar a subcategoria-pai apaga as de dentro dela
+  -- também (on delete cascade), do mesmo jeito que apagar a categoria já
+  -- apaga todas as suas subcategorias.
+  subcategoria_pai_id uuid references public.subcategorias (id) on delete cascade,
   nome text not null,
   criado_em timestamptz not null default now()
 );
 
 create index if not exists subcategorias_categoria_idx
   on public.subcategorias (categoria_id);
+
+create index if not exists subcategorias_pai_idx
+  on public.subcategorias (subcategoria_pai_id);
 
 alter table public.subcategorias enable row level security;
 

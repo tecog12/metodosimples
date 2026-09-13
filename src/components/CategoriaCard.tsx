@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { ordenarSubcategoriasEmArvore } from "@/lib/utils";
 import type { Categoria, Subcategoria, TipoLancamento } from "@/lib/types";
 
 export default function CategoriaCard({
@@ -26,6 +27,12 @@ export default function CategoriaCard({
   const [nomeSubcategoriaEditado, setNomeSubcategoriaEditado] = useState("");
   const [salvandoSubcategoria, setSalvandoSubcategoria] = useState(false);
 
+  // Formulário de "adicionar subcategoria dentro dessa subcategoria" — só um
+  // por vez fica aberto, guardado pelo id da subcategoria-pai (null = o
+  // formulário principal, lá embaixo, que cria de primeiro nível).
+  const [formularioFilhoDe, setFormularioFilhoDe] = useState<string | null>(null);
+  const [nomeFilho, setNomeFilho] = useState("");
+
   async function salvarCategoria() {
     if (!nome.trim()) return;
     setSalvando(true);
@@ -43,17 +50,20 @@ export default function CategoriaCard({
     aoMudar();
   }
 
-  async function criarSubcategoria() {
-    const nomeParaSalvar = novaSubcategoria.trim();
+  async function criarSubcategoria(nomeParaCriar: string, subcategoriaPaiId: string | null) {
+    const nomeParaSalvar = nomeParaCriar.trim();
     if (!nomeParaSalvar) return;
     setCriandoSubcategoria(true);
     await supabase.from("subcategorias").insert({
       user_id: categoria.user_id,
       categoria_id: categoria.id,
+      subcategoria_pai_id: subcategoriaPaiId,
       nome: nomeParaSalvar,
     });
     setCriandoSubcategoria(false);
     setNovaSubcategoria("");
+    setNomeFilho("");
+    setFormularioFilhoDe(null);
     aoMudar();
   }
 
@@ -76,6 +86,8 @@ export default function CategoriaCard({
   }
 
   async function excluirSubcategoria(subcategoriaId: string) {
+    // Exclui em cascata qualquer subcategoria criada dentro dela (mesma
+    // regra de quando se apaga uma categoria inteira).
     await supabase.from("subcategorias").delete().eq("id", subcategoriaId);
     aoMudar();
   }
@@ -135,6 +147,8 @@ export default function CategoriaCard({
     );
   }
 
+  const arvoreDeSubcategorias = ordenarSubcategoriasEmArvore(subcategorias);
+
   return (
     <div className="card">
       <div className="mb-3 flex items-center justify-between">
@@ -159,50 +173,95 @@ export default function CategoriaCard({
       </div>
 
       <div className="space-y-2 pl-5">
-        {subcategorias.map((s) =>
-          subcategoriaEditandoId === s.id ? (
-            <div key={s.id} className="flex gap-2">
-              <input
-                type="text"
-                autoFocus
-                className="input-field !py-1.5 text-sm"
-                value={nomeSubcategoriaEditado}
-                onChange={(e) => setNomeSubcategoriaEditado(e.target.value)}
-              />
-              <button
-                onClick={() => salvarSubcategoria(s.id)}
-                disabled={salvandoSubcategoria}
-                className="btn-primary !px-3 !py-1.5 text-sm"
-              >
-                Salvar
-              </button>
-              <button
-                onClick={() => setSubcategoriaEditandoId(null)}
-                className="btn-secondary !px-3 !py-1.5 text-sm"
-              >
-                Cancelar
-              </button>
-            </div>
-          ) : (
-            <div key={s.id} className="flex items-center justify-between">
-              <p className="text-sm text-brand-700">› {s.nome}</p>
-              <div className="flex items-center gap-3">
+        {arvoreDeSubcategorias.map(({ item: s, profundidade }) => (
+          <div key={s.id} style={{ paddingLeft: `${profundidade * 16}px` }}>
+            {subcategoriaEditandoId === s.id ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  autoFocus
+                  className="input-field !py-1.5 text-sm"
+                  value={nomeSubcategoriaEditado}
+                  onChange={(e) => setNomeSubcategoriaEditado(e.target.value)}
+                />
                 <button
-                  onClick={() => iniciarEdicaoSubcategoria(s)}
-                  className="text-xs font-medium text-brand-600 underline"
+                  onClick={() => salvarSubcategoria(s.id)}
+                  disabled={salvandoSubcategoria}
+                  className="btn-primary !px-3 !py-1.5 text-sm"
                 >
-                  Editar
+                  Salvar
                 </button>
                 <button
-                  onClick={() => excluirSubcategoria(s.id)}
-                  className="text-xs font-medium text-red-600 underline"
+                  onClick={() => setSubcategoriaEditandoId(null)}
+                  className="btn-secondary !px-3 !py-1.5 text-sm"
                 >
-                  Excluir
+                  Cancelar
                 </button>
               </div>
-            </div>
-          ),
-        )}
+            ) : (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-brand-700">› {s.nome}</p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() =>
+                      setFormularioFilhoDe(formularioFilhoDe === s.id ? null : s.id)
+                    }
+                    className="text-xs font-medium text-brand-600 underline"
+                  >
+                    + Sub
+                  </button>
+                  <button
+                    onClick={() => iniciarEdicaoSubcategoria(s)}
+                    className="text-xs font-medium text-brand-600 underline"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => excluirSubcategoria(s.id)}
+                    className="text-xs font-medium text-red-600 underline"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {formularioFilhoDe === s.id && (
+              <div className="mt-2 flex gap-2" style={{ paddingLeft: "16px" }}>
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder={`Nova subcategoria dentro de "${s.nome}"`}
+                  className="input-field !py-1.5 text-sm"
+                  value={nomeFilho}
+                  onChange={(e) => setNomeFilho(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      criarSubcategoria(nomeFilho, s.id);
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => criarSubcategoria(nomeFilho, s.id)}
+                  disabled={criandoSubcategoria}
+                  className="btn-secondary !px-4 !py-1.5 text-sm"
+                >
+                  Adicionar
+                </button>
+                <button
+                  onClick={() => {
+                    setFormularioFilhoDe(null);
+                    setNomeFilho("");
+                  }}
+                  className="text-xs font-medium text-brand-500 underline"
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
 
         <div className="flex gap-2 pt-1">
           <input
@@ -214,12 +273,12 @@ export default function CategoriaCard({
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                criarSubcategoria();
+                criarSubcategoria(novaSubcategoria, null);
               }
             }}
           />
           <button
-            onClick={criarSubcategoria}
+            onClick={() => criarSubcategoria(novaSubcategoria, null)}
             disabled={criandoSubcategoria}
             className="btn-secondary !px-4 !py-1.5 text-sm"
           >

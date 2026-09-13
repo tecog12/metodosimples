@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { Categoria, Conta, Subcategoria, TipoLancamento } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { hojeISO, somarMeses } from "@/lib/utils";
+import { hojeISO, ordenarSubcategoriasEmArvore, somarMeses } from "@/lib/utils";
 
 export default function NovaTransacaoForm({
   categorias,
@@ -41,7 +41,8 @@ export default function NovaTransacaoForm({
   );
 
   const subcategoriasDaCategoria = useMemo(
-    () => subcategorias.filter((s) => s.categoria_id === categoriaId),
+    () =>
+      ordenarSubcategoriasEmArvore(subcategorias.filter((s) => s.categoria_id === categoriaId)),
     [subcategorias, categoriaId],
   );
 
@@ -164,6 +165,23 @@ export default function NovaTransacaoForm({
       </select>
 
       <select
+        className="input-field"
+        value={subcategoriaId}
+        onChange={(e) => setSubcategoriaId(e.target.value)}
+        disabled={subcategoriasDaCategoria.length === 0}
+      >
+        <option value="">
+          {subcategoriasDaCategoria.length === 0 ? "Sem subcategorias" : "Subcategoria (opcional)"}
+        </option>
+        {subcategoriasDaCategoria.map(({ item: s, profundidade }) => (
+          <option key={s.id} value={s.id}>
+            {"— ".repeat(profundidade)}
+            {s.nome}
+          </option>
+        ))}
+      </select>
+
+      <select
         required
         className="input-field"
         value={contaId}
@@ -173,22 +191,6 @@ export default function NovaTransacaoForm({
         {contas.map((c) => (
           <option key={c.id} value={c.id}>
             {c.nome}
-          </option>
-        ))}
-      </select>
-
-      <select
-        className="input-field"
-        value={subcategoriaId}
-        onChange={(e) => setSubcategoriaId(e.target.value)}
-        disabled={subcategoriasDaCategoria.length === 0}
-      >
-        <option value="">
-          {subcategoriasDaCategoria.length === 0 ? "Sem subcategorias" : "Subcategoria (opcional)"}
-        </option>
-        {subcategoriasDaCategoria.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.nome}
           </option>
         ))}
       </select>

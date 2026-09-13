@@ -27,9 +27,12 @@ export default function Painel() {
   const [carregando, setCarregando] = useState(true);
   const [linhas, setLinhas] = useState<LinhaTransacao[]>([]);
   const [vencimentos, setVencimentos] = useState<Lembrete[]>([]);
+  const [compararMesAnterior, setCompararMesAnterior] = useState(false);
 
   const inicioMes = `${mesSelecionado}-01`;
   const inicioProximoMes = `${mesVizinho(mesSelecionado, 1)}-01`;
+  const mesAnteriorChave = mesVizinho(mesSelecionado, -1);
+  const inicioMesAnterior = `${mesAnteriorChave}-01`;
 
   const [anoRef, mesRef] = mesSelecionado.split("-").map(Number);
   const referencia = new Date(anoRef, mesRef - 1, 1);
@@ -71,6 +74,13 @@ export default function Painel() {
     .reduce((soma, t) => soma + Number(t.valor), 0);
 
   const saldo = totalReceitas - totalDespesas;
+
+  // O mês anterior já está dentro da janela de 6 meses buscada acima, então
+  // não precisa de outra consulta ao banco pra calcular esse comparativo.
+  const doMesAnterior = linhas.filter((t) => t.data >= inicioMesAnterior && t.data < inicioMes);
+  const saldoMesAnterior =
+    doMesAnterior.filter((t) => t.tipo === "receita").reduce((s, t) => s + Number(t.valor), 0) -
+    doMesAnterior.filter((t) => t.tipo === "despesa").reduce((s, t) => s + Number(t.valor), 0);
 
   const porCategoria = new Map<string, { nome: string; valor: number; cor: string }>();
   for (const t of doMesSelecionado) {
@@ -127,6 +137,16 @@ export default function Painel() {
         </div>
       </div>
 
+      <label className="flex w-fit items-center gap-1.5 text-xs text-brand-600">
+        <input
+          type="checkbox"
+          checked={compararMesAnterior}
+          onChange={(e) => setCompararMesAnterior(e.target.checked)}
+          className="h-3.5 w-3.5 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
+        />
+        Mostrar também o saldo do mês anterior
+      </label>
+
       {carregando ? (
         <p className="text-sm text-brand-500">Carregando…</p>
       ) : (
@@ -153,6 +173,15 @@ export default function Painel() {
               >
                 {formatarMoeda(saldo)}
               </p>
+              {compararMesAnterior && (
+                <p
+                  className={`mt-1 text-xs ${
+                    saldoMesAnterior >= 0 ? "text-positivo-600" : "text-[#b8562f]"
+                  }`}
+                >
+                  {nomeDoMes(inicioMesAnterior)}: {formatarMoeda(saldoMesAnterior)}
+                </p>
+              )}
             </div>
           </div>
 

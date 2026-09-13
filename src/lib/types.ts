@@ -13,6 +13,9 @@ export type Subcategoria = {
   id: string;
   user_id: string;
   categoria_id: string;
+  // Quando nula, é uma subcategoria "de primeiro nível" dentro da categoria.
+  // Quando preenchida, é uma subcategoria dentro de outra subcategoria.
+  subcategoria_pai_id: string | null;
   nome: string;
   criado_em: string;
 };

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatarData, formatarMoeda, hojeISO } from "@/lib/utils";
+import { formatarData, formatarMoeda, hojeISO, ordenarSubcategoriasEmArvore } from "@/lib/utils";
 import { gerarLancamentosPendentes, proximaOcorrencia } from "@/lib/recorrencias";
 import type { Categoria, Conta, Recorrencia, Subcategoria, TipoLancamento } from "@/lib/types";
 
@@ -29,7 +29,8 @@ export default function Recorrencias() {
     [categorias, tipo],
   );
   const subcategoriasDaCategoria = useMemo(
-    () => subcategorias.filter((s) => s.categoria_id === categoriaId),
+    () =>
+      ordenarSubcategoriasEmArvore(subcategorias.filter((s) => s.categoria_id === categoriaId)),
     [subcategorias, categoriaId],
   );
 
@@ -202,8 +203,9 @@ export default function Recorrencias() {
           <option value="">
             {subcategoriasDaCategoria.length === 0 ? "Sem subcategorias" : "Subcategoria (opcional)"}
           </option>
-          {subcategoriasDaCategoria.map((s) => (
+          {subcategoriasDaCategoria.map(({ item: s, profundidade }) => (
             <option key={s.id} value={s.id}>
+              {"— ".repeat(profundidade)}
               {s.nome}
             </option>
           ))}

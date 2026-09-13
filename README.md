@@ -125,8 +125,10 @@ migração na ordem — [`supabase/migracao_v2.sql`](./supabase/migracao_v2.sql)
 (subcategorias, parcelamento), depois
 [`supabase/migracao_v3.sql`](./supabase/migracao_v3.sql) (contas) e depois
 [`supabase/migracao_v4.sql`](./supabase/migracao_v4.sql) (recorrências, metas
-de economia e os campos de fatura do cartão de crédito) — cada um só
-adiciona o que é novo, sem apagar nada do que já existe.
+de economia e os campos de fatura do cartão de crédito) e depois
+[`supabase/migracao_v5.sql`](./supabase/migracao_v5.sql) (subcategoria
+dentro de subcategoria) — cada um só adiciona o que é novo, sem apagar nada
+do que já existe.
 
 > Nota sobre a notificação de vencimentos: na primeira vez que o app for
 > abrir um aviso de conta a vencer, o sistema operacional pode perguntar se

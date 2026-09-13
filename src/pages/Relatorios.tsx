@@ -3,6 +3,10 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { exportarCSV, formatarData, formatarMoeda, primeiroDiaDoMes, hojeISO } from "@/lib/utils";
 import type { Conta } from "@/lib/types";
+// Logo colorida direto (sem passar pelo componente <Logo>, que troca pra
+// versão branca no modo escuro) — no papel impresso o fundo é sempre
+// branco, então a versão colorida é a única que faz sentido aqui.
+import logoColor from "@/assets/logo-color.png";
 
 type TransacaoRelatorio = {
   id: string;
@@ -105,20 +109,18 @@ export default function Relatorios() {
 
   function tabelaGrupo(grupos: Grupo[]) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-4">
         {grupos.map((grupo) => (
-          <div key={grupo.nome}>
-            <div className="mb-1.5 flex items-center justify-between border-b border-brand-200 pb-1">
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 rounded-full print:hidden"
-                  style={{ backgroundColor: grupo.cor }}
-                />
-                <p className="font-medium text-brand-900">{grupo.nome}</p>
-              </div>
+          <div
+            key={grupo.nome}
+            className="break-inside-avoid-page rounded-lg border-l-4 bg-sand-50/60 py-2 pl-3 pr-2 print:rounded-none print:bg-transparent print:pl-3"
+            style={{ borderLeftColor: grupo.cor }}
+          >
+            <div className="mb-1.5 flex items-center justify-between">
+              <p className="font-medium text-brand-900">{grupo.nome}</p>
               <p className="font-medium text-brand-900">{formatarMoeda(grupo.total)}</p>
             </div>
-            <div className="space-y-1 pl-4">
+            <div className="space-y-1">
               {grupo.itens.map((item) => (
                 <div key={item.id} className="flex items-center justify-between text-sm">
                   <p className="text-brand-700">
@@ -211,27 +213,35 @@ export default function Relatorios() {
         <p className="text-sm text-brand-500 print:hidden">Carregando…</p>
       ) : (
         <div className="space-y-8">
-          <div className="hidden print:block">
-            <h1 className="font-display text-2xl text-brand-900">Método Simples</h1>
-            <p className="text-sm text-brand-600">
-              Relatório de {formatarData(dataInicio)} até {formatarData(dataFim)}
-            </p>
+          <div className="hidden items-center gap-4 border-b-2 border-brand-600 pb-4 print:flex">
+            <img src={logoColor} alt="Método Simples" className="h-12 w-auto" />
+            <div>
+              <h1 className="font-display text-xl text-brand-900">Relatório financeiro</h1>
+              <p className="text-sm text-brand-600">
+                {formatarData(dataInicio)} até {formatarData(dataFim)}
+                {contaId ? ` · ${contas.find((c) => c.id === contaId)?.nome ?? ""}` : ""}
+              </p>
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="card">
+            <div className="card border-l-4 border-l-positivo-500">
               <p className="text-sm text-brand-600">Total de receitas</p>
               <p className="mt-1 font-display text-xl text-positivo-700">
                 {formatarMoeda(totalReceitas)}
               </p>
             </div>
-            <div className="card">
+            <div className="card border-l-4 border-l-[#b8562f]">
               <p className="text-sm text-brand-600">Total de despesas</p>
               <p className="mt-1 font-display text-xl text-[#b8562f]">
                 {formatarMoeda(totalDespesas)}
               </p>
             </div>
-            <div className="card">
+            <div
+              className={`card border-l-4 ${
+                totalReceitas - totalDespesas >= 0 ? "border-l-positivo-500" : "border-l-[#b8562f]"
+              }`}
+            >
               <p className="text-sm text-brand-600">Saldo do período</p>
               <p
                 className={`mt-1 font-display text-xl ${
@@ -252,6 +262,10 @@ export default function Relatorios() {
             <h2 className="mb-3 font-display text-lg text-brand-800">Receitas por categoria</h2>
             {tabelaGrupo(grupoReceitas)}
           </div>
+
+          <p className="hidden pt-2 text-center text-xs text-brand-400 print:block">
+            Gerado pelo Método Simples em {formatarData(hojeISO())}
+          </p>
         </div>
       )}
     </div>

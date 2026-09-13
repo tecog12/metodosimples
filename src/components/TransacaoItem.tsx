@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Categoria, Conta, Subcategoria, Transacao } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
-import { formatarData, formatarMoeda } from "@/lib/utils";
+import { formatarData, formatarMoeda, ordenarSubcategoriasEmArvore } from "@/lib/utils";
 
 type TransacaoComCategoria = Transacao & {
   categoria: { nome: string; cor: string } | { nome: string; cor: string }[] | null;
@@ -48,7 +48,8 @@ export default function TransacaoItem({
   );
 
   const subcategoriasDaCategoria = useMemo(
-    () => subcategorias.filter((s) => s.categoria_id === categoriaId),
+    () =>
+      ordenarSubcategoriasEmArvore(subcategorias.filter((s) => s.categoria_id === categoriaId)),
     [subcategorias, categoriaId],
   );
 
@@ -142,8 +143,9 @@ export default function TransacaoItem({
           <option value="">
             {subcategoriasDaCategoria.length === 0 ? "Sem subcategorias" : "Subcategoria (opcional)"}
           </option>
-          {subcategoriasDaCategoria.map((s) => (
+          {subcategoriasDaCategoria.map(({ item: s, profundidade }) => (
             <option key={s.id} value={s.id}>
+              {"— ".repeat(profundidade)}
               {s.nome}
             </option>
           ))}

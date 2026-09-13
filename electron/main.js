@@ -140,6 +140,9 @@ if (!temTravaDeInstanciaUnica) {
       minHeight: 600,
       backgroundColor: "#faf8f4",
       title: "Método Simples",
+      // Começa escondida e só aparece já maximizada — assim o usuário nunca
+      // vê a janela no tamanho pequeno (1200x800) antes de crescer.
+      show: false,
       // No Windows/macOS o ícone do instalador (build/icon.ico e .icns) já
       // cuida do ícone do app. No Linux, a janela também usa esse ícone para
       // aparecer certo na barra de tarefas. Fica copiado aqui dentro de
@@ -153,6 +156,11 @@ if (!temTravaDeInstanciaUnica) {
         sandbox: true,
         preload: path.join(__dirname, "preload.cjs"),
       },
+    });
+
+    janela.once("ready-to-show", () => {
+      janela.maximize();
+      janela.show();
     });
 
     if (URL_DEV) {

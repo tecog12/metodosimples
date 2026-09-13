@@ -115,6 +115,39 @@ export function faturaDoCartao(dataCompraISO: string, diaFechamento: number): st
   return mesVizinho(`${ano}-${String(mes).padStart(2, "0")}`, 1);
 }
 
+/** Organiza uma lista plana de subcategorias (que podem ter outra
+ * subcategoria como "pai", formando níveis) em ordem de árvore — cada pai
+ * aparece imediatamente antes dos seus filhos — junto com a profundidade de
+ * cada uma (0 = nível mais alto), útil tanto para mostrar a hierarquia numa
+ * lista (recuada) quanto num <select>. */
+export function ordenarSubcategoriasEmArvore<
+  T extends { id: string; subcategoria_pai_id: string | null; nome: string },
+>(lista: T[]): { item: T; profundidade: number }[] {
+  const filhosPorPai = new Map<string | null, T[]>();
+  for (const item of lista) {
+    const paiId = item.subcategoria_pai_id ?? null;
+    const grupo = filhosPorPai.get(paiId);
+    if (grupo) {
+      grupo.push(item);
+    } else {
+      filhosPorPai.set(paiId, [item]);
+    }
+  }
+  for (const grupo of filhosPorPai.values()) {
+    grupo.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }
+
+  const resultado: { item: T; profundidade: number }[] = [];
+  function visitar(paiId: string | null, profundidade: number) {
+    for (const item of filhosPorPai.get(paiId) ?? []) {
+      resultado.push({ item, profundidade });
+      visitar(item.id, profundidade + 1);
+    }
+  }
+  visitar(null, 0);
+  return resultado;
+}
+
 function escaparCSV(valor: string | number): string {
   const texto = String(valor);
   if (/[",\n;]/.test(texto)) {

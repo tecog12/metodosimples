@@ -1,7 +1,7 @@
 {
   "name": "metodo-simples",
   "productName": "Método Simples",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "Controle de gastos e orçamento para leitores do livro Método Simples",
   "author": "Método Simples <tecog12@gmail.com>",
   "private": true,

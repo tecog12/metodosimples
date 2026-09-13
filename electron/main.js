@@ -79,6 +79,43 @@ ipcMain.handle("auth-storage:remove", (_evento, chave) => {
 });
 
 // ----------------------------------------------------------------------------
+// Visualização e impressão do relatório
+// ----------------------------------------------------------------------------
+// O Electron não implementa a visualização de impressão do Chrome: ao chamar
+// window.print() direto, ele abre o diálogo de impressão NATIVO do sistema
+// operacional — e esse diálogo (pelo menos no Windows) não sabe gerar uma
+// prévia da página do app, mostrando no lugar a mensagem "Este aplicativo
+// não dá suporte à visualização de impressão". Isso é uma limitação conhecida
+// e definitiva do próprio Electron, não um defeito deste app.
+//
+// A solução (usada pela maioria dos apps Electron) é gerar um PDF de verdade
+// da página — que já aplica o mesmo CSS de impressão do app — e abrir esse
+// PDF no visualizador padrão do sistema (Edge, Acrobat, Preview, etc.), que
+// aí sim mostra uma prévia real e permite imprimir ou salvar a partir dela.
+ipcMain.handle("relatorio:visualizar-pdf", async (evento) => {
+  try {
+    const pdf = await evento.sender.printToPDF({
+      printBackground: true,
+      // Respeita o "@page { size: A4; margin: ... }" já definido em
+      // src/index.css, em vez de usar o tamanho padrão (Letter) do Electron.
+      preferCSSPageSize: true,
+    });
+
+    const nomeArquivo = `Relatorio-Metodo-Simples-${Date.now()}.pdf`;
+    const caminho = path.join(app.getPath("temp"), nomeArquivo);
+    fs.writeFileSync(caminho, pdf);
+
+    const erroAoAbrir = await shell.openPath(caminho);
+    if (erroAoAbrir) {
+      return { ok: false, erro: erroAoAbrir };
+    }
+    return { ok: true };
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : String(erro) };
+  }
+});
+
+// ----------------------------------------------------------------------------
 // Link de "esqueci minha senha" (protocolo metodosimples://)
 // ----------------------------------------------------------------------------
 // O e-mail de redefinição de senha do Supabase leva a um link nesse

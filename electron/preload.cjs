@@ -27,3 +27,10 @@ contextBridge.exposeInMainWorld("linkRedefinirSenha", {
     ipcRenderer.on("link-redefinir-senha", (_evento, url) => callback(url));
   },
 });
+
+// Gera um PDF real da página atual (respeitando o CSS de impressão do app) e
+// abre no visualizador padrão do sistema — veja o comentário em
+// electron/main.js sobre por que isso substitui o window.print() direto.
+contextBridge.exposeInMainWorld("impressao", {
+  visualizarRelatorio: () => ipcRenderer.invoke("relatorio:visualizar-pdf"),
+});

@@ -8,6 +8,18 @@ import type { Conta } from "@/lib/types";
 // branco, então a versão colorida é a única que faz sentido aqui.
 import logoColor from "@/assets/logo-color.png";
 
+declare global {
+  interface Window {
+    // Exposto pelo preload do Electron (electron/preload.cjs). Gera um PDF
+    // real do relatório e abre no visualizador padrão do sistema — o
+    // Electron não sabe mostrar uma prévia de impressão de verdade sozinho
+    // (veja o comentário em electron/main.js).
+    impressao?: {
+      visualizarRelatorio: () => Promise<{ ok: boolean; erro?: string }>;
+    };
+  }
+}
+
 type TransacaoRelatorio = {
   id: string;
   tipo: "receita" | "despesa";
@@ -26,6 +38,7 @@ export default function Relatorios() {
   const [contas, setContas] = useState<Conta[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [transacoes, setTransacoes] = useState<TransacaoRelatorio[]>([]);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
 
   const gerar = useCallback(async () => {
     if (!user) return;
@@ -91,6 +104,25 @@ export default function Relatorios() {
   const grupoReceitas = agrupar("receita");
   const totalDespesas = grupoDespesas.reduce((s, g) => s + g.total, 0);
   const totalReceitas = grupoReceitas.reduce((s, g) => s + g.total, 0);
+
+  async function imprimir() {
+    // Dentro do app instalado (Electron), gera um PDF de verdade e abre no
+    // visualizador padrão do sistema — que mostra uma prévia real. Fora do
+    // Electron (ex: "npm run dev" no navegador, só para conferência), cai
+    // de volta no window.print() normal.
+    if (typeof window !== "undefined" && window.impressao) {
+      setGerandoPdf(true);
+      const resultado = await window.impressao.visualizarRelatorio();
+      setGerandoPdf(false);
+      if (!resultado.ok) {
+        alert(
+          "Não foi possível gerar o PDF do relatório. Tente novamente ou verifique se há espaço em disco.",
+        );
+      }
+      return;
+    }
+    window.print();
+  }
 
   function exportar() {
     exportarCSV(
@@ -158,8 +190,8 @@ export default function Relatorios() {
           >
             Exportar CSV
           </button>
-          <button onClick={() => window.print()} className="btn-primary">
-            Imprimir / Salvar em PDF
+          <button onClick={imprimir} disabled={gerandoPdf} className="btn-primary">
+            {gerandoPdf ? "Gerando PDF…" : "Visualizar / Imprimir relatório"}
           </button>
         </div>
       </div>

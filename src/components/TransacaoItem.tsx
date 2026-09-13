@@ -53,23 +53,61 @@ export default function TransacaoItem({
     [subcategorias, categoriaId],
   );
 
-  async function salvar() {
+  // Esse lançamento faz parte de um parcelamento ou foi gerado por uma
+  // recorrência — nesses casos, ao salvar uma edição, oferecemos a opção de
+  // aplicar a mesma mudança nos lançamentos futuros também.
+  const fazPartaDeParcelamento = Boolean(transacao.grupo_parcelamento && transacao.parcela_numero);
+  const fazPartaDeRecorrencia = Boolean(transacao.recorrencia_id);
+  const podeAplicarNasFuturas = fazPartaDeParcelamento || fazPartaDeRecorrencia;
+
+  async function salvar(aplicarNasFuturas: boolean) {
     const valorNumero = Number(valor.replace(",", "."));
     if (!categoriaId || !contaId || !valorNumero || valorNumero <= 0 || !data) return;
 
     setSalvando(true);
+
+    // Tipo, categoria, subcategoria, conta e descrição fazem sentido repetir
+    // nos lançamentos futuros; valor e data não — cada parcela/ocorrência
+    // mantém o próprio valor e a própria data.
+    const camposComuns = {
+      tipo,
+      categoria_id: categoriaId,
+      subcategoria_id: subcategoriaId || null,
+      conta_id: contaId,
+      descricao: descricao.trim() || null,
+    };
+
     await supabase
       .from("transacoes")
-      .update({
-        tipo,
-        valor: valorNumero,
-        categoria_id: categoriaId,
-        subcategoria_id: subcategoriaId || null,
-        conta_id: contaId,
-        descricao: descricao.trim() || null,
-        data,
-      })
+      .update({ ...camposComuns, valor: valorNumero, data })
       .eq("id", transacao.id);
+
+    if (aplicarNasFuturas && fazPartaDeParcelamento) {
+      await supabase
+        .from("transacoes")
+        .update(camposComuns)
+        .eq("grupo_parcelamento", transacao.grupo_parcelamento as string)
+        .gt("parcela_numero", transacao.parcela_numero as number);
+    }
+
+    if (aplicarNasFuturas && fazPartaDeRecorrencia) {
+      await Promise.all([
+        // Lançamentos futuros dessa recorrência que já tinham sido gerados.
+        supabase
+          .from("transacoes")
+          .update(camposComuns)
+          .eq("recorrencia_id", transacao.recorrencia_id as string)
+          .gt("data", transacao.data),
+        // E a própria recorrência, pra quem ainda vai ser gerado também sair
+        // do jeito novo (aqui o valor entra, já que representa o valor
+        // "padrão" de cada ocorrência futura).
+        supabase
+          .from("recorrencias")
+          .update({ ...camposComuns, valor: valorNumero })
+          .eq("id", transacao.recorrencia_id as string),
+      ]);
+    }
+
     setSalvando(false);
     setEditando(false);
     aoMudar();
@@ -173,10 +211,26 @@ export default function TransacaoItem({
           value={data}
           onChange={(e) => setData(e.target.value)}
         />
-        <div className="flex gap-2 lg:col-span-6">
-          <button onClick={salvar} disabled={salvando} className="btn-primary">
-            {salvando ? "Salvando…" : "Salvar"}
+        <div className="flex flex-wrap gap-2 lg:col-span-6">
+          <button onClick={() => salvar(false)} disabled={salvando} className="btn-primary">
+            {salvando ? "Salvando…" : podeAplicarNasFuturas ? "Salvar somente esta" : "Salvar"}
           </button>
+          {podeAplicarNasFuturas && (
+            <button
+              onClick={() => salvar(true)}
+              disabled={salvando}
+              className="btn-secondary"
+              title={
+                fazPartaDeParcelamento
+                  ? "Aplica tipo, categoria, subcategoria, conta e descrição também nas parcelas futuras"
+                  : "Aplica tipo, categoria, subcategoria, conta e descrição também nas próximas ocorrências"
+              }
+            >
+              {fazPartaDeParcelamento
+                ? "Salvar esta e as parcelas futuras"
+                : "Salvar esta e as próximas ocorrências"}
+            </button>
+          )}
           <button onClick={() => setEditando(false)} className="btn-secondary">
             Cancelar
           </button>
